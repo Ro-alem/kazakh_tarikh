@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Аңырақай — Дала Ерлігі</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4a017;
+  --gold2: #f5c842;
+  --dark: #080604;
+  --brown: #150a00;
+  --red: #9b1c1c;
+  --teal: #0d4a3a;
+  --text: #eedcb0;
+  --dim: #8a7050;
+  --hp-green: #2d8a3a;
+  --hp-red: #9b1c1c;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--dark);
+  color:var(--text);
+  font-family:'Merriweather',serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:default;
+}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.screen{display:none;position:relative;z-index:1;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:linear-gradient(180deg,rgba(8,6,4,.97) 0%,rgba(8,6,4,0) 100%);
+  padding:10px 16px 20px;
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#hud.show{display:flex;}
+.hud-stat{display:flex;align-items:center;gap:5px;font-size:.78rem;}
+.hud-stat .val{color:var(--gold2);font-weight:700;}
+.hud-bar-wrap{width:70px;height:7px;background:#1a1000;border-radius:4px;border:1px solid #d4a01744;overflow:hidden;}
+.hud-bar{height:100%;border-radius:4px;transition:width .5s;}
+.hud-center{font-family:'Cinzel Decorative',serif;font-size:.7rem;color:var(--gold);letter-spacing:.12em;text-align:center;text-transform:uppercase;flex:1;min-width:120px;}
+.hud-score{font-family:'Cinzel Decorative',serif;font-size:.75rem;color:var(--gold2);}
+#screen-title{align-items:center;justify-content:center;text-align:center;padding:40px 20px;background:radial-gradient(ellipse at 50% 35%,#1c0a00 0%,#080604 65%);}
+.title-kz-pre{font-size:.85rem;color:var(--dim);letter-spacing:.3em;text-transform:uppercase;margin-bottom:16px;}
+.title-ornament{font-size:2.4rem;color:var(--gold);margin-bottom:12px;letter-spacing:.4em;animation:glowpulse 2.5s infinite alternate;}
+@keyframes glowpulse{from{text-shadow:0 0 8px #d4a01766;}to{text-shadow:0 0 35px #d4a017bb,0 0 70px #d4a01733;}}
+.title-main{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,4.2rem);color:var(--gold2);line-height:1.15;text-shadow:0 0 60px #d4a01788;margin-bottom:.2em;animation:titlefade 1.2s ease both;}
+@keyframes titlefade{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.title-sub{font-family:'Cinzel Decorative',serif;font-size:clamp(.85rem,2.5vw,1.3rem);color:var(--dim);letter-spacing:.18em;margin-bottom:2rem;}
+.title-year{display:inline-block;border:1px solid #d4a01755;padding:6px 28px;font-size:.9rem;color:var(--gold);letter-spacing:.2em;margin-bottom:24px;position:relative;}
+.title-year::before,.title-year::after{content:'✦';color:var(--gold);position:absolute;top:50%;transform:translateY(-50%);}
+.title-year::before{left:-16px;}
+.title-year::after{right:-16px;}
+.title-lore{max-width:580px;font-size:1rem;color:#c8ad7a;line-height:1.85;margin-bottom:2.5rem;font-style:italic;animation:titlefade 1.4s .3s ease both;}
+.btn-play{font-family:'Cinzel Decorative',serif;font-size:1rem;padding:16px 56px;background:linear-gradient(135deg,#6a3800,#d4a017,#6a3800);color:#080604;border:2px solid var(--gold2);cursor:pointer;letter-spacing:.1em;clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);transition:all .3s;animation:titlefade 1.4s .6s ease both;}
+.btn-play:hover{transform:scale(1.06);box-shadow:0 0 40px #d4a017aa;}
+#screen-chapters{padding:80px 20px 40px;background:radial-gradient(ellipse at 20% 70%,#0a1a0a 0%,#080604 60%);align-items:center;}
+.ch-page-title{font-family:'Cinzel Decorative',serif;font-size:1.6rem;color:var(--gold2);text-align:center;margin-bottom:.4rem;}
+.ch-page-sub{color:var(--dim);font-size:.9rem;text-align:center;font-style:italic;margin-bottom:2.5rem;}
+.chapters-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;max-width:800px;width:100%;margin:0 auto 2rem;}
+.ch-card{background:rgba(212,160,23,.05);border:1px solid #d4a01744;padding:20px 18px;border-radius:2px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.ch-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform .3s;}
+.ch-card:hover::after{transform:scaleX(1);}
+.ch-card:hover{border-color:var(--gold);transform:translateY(-3px);background:rgba(212,160,23,.1);}
+.ch-card.locked{opacity:.3;cursor:not-allowed;transform:none!important;}
+.ch-card.done{border-color:#2a7a2a;background:rgba(42,122,42,.07);}
+.ch-num{font-size:.68rem;color:var(--dim);letter-spacing:.15em;margin-bottom:6px;}
+.ch-name{font-family:'Cinzel Decorative',serif;font-size:.85rem;color:var(--gold);margin-bottom:5px;line-height:1.3;}
+.ch-loc{font-size:.78rem;color:var(--dim);font-style:italic;}
+.ch-badge{position:absolute;top:12px;right:12px;font-size:1.1rem;}
+.progress-bar-wrap{max-width:800px;width:100%;background:rgba(212,160,23,.06);border:1px solid #d4a01733;border-radius:2px;padding:16px 20px;display:flex;align-items:center;gap:16px;}
+.prog-label{font-size:.8rem;color:var(--dim);white-space:nowrap;}
+.prog-track{flex:1;height:8px;background:#1a1000;border-radius:4px;border:1px solid #d4a01733;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,#6a3800,var(--gold2));border-radius:4px;transition:width .8s;}
+.prog-pct{font-family:'Cinzel Decorative',serif;font-size:.8rem;color:var(--gold);white-space:nowrap;}
+#screen-story{padding:80px 20px 50px;background:#080604;align-items:stretch;}
+.story-wrap{max-width:780px;margin:0 auto;width:100%;}
+.story-head{border-bottom:1px solid #d4a01733;padding-bottom:14px;margin-bottom:22px;}
+.story-ch-num{font-size:.7rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
+.story-ch-name{font-family:'Cinzel Decorative',serif;font-size:clamp(1.1rem,3.5vw,1.9rem);color:var(--gold2);margin-bottom:4px;}
+.story-location{font-size:.82rem;color:var(--dim);font-style:italic;}
+.scene-card{background:rgba(212,160,23,.03);border:1px solid #d4a01720;border-left:3px solid var(--gold);padding:26px;border-radius:0 3px 3px 0;min-height:200px;margin-bottom:20px;position:relative;}
+.scene-text{font-size:1.05rem;line-height:1.95;color:#d4b878;white-space:pre-wrap;}
+.speaker-tag{font-size:.72rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;font-style:normal;}
+.choices-col{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.choice-btn{background:rgba(212,160,23,.05);border:1px solid #d4a01755;color:var(--text);padding:16px 20px;text-align:left;font-family:'Merriweather',serif;font-size:.95rem;cursor:pointer;border-radius:2px;transition:all .25s;line-height:1.5;position:relative;}
+.choice-btn::before{content:'▸ ';color:var(--gold);margin-right:4px;}
+.choice-btn:hover:not(:disabled){background:rgba(212,160,23,.14);border-color:var(--gold);transform:translateX(5px);}
+.choice-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.choice-btn.chosen{background:rgba(212,160,23,.18);border-color:var(--gold2);}
+.choice-btn.wrong{background:rgba(155,28,28,.18);border-color:var(--red);}
+.outcome-panel{background:rgba(212,160,23,.05);border:1px solid var(--gold);padding:18px 22px;border-radius:2px;font-size:.95rem;line-height:1.75;color:#d4b878;display:none;animation:fadein .5s;}
+.outcome-panel.show{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.gain-tag{color:#4acc5a;font-weight:700;}
+.loss-tag{color:#e05050;font-weight:700;}
+.story-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+.btn-action{font-family:'Cinzel Decorative',serif;font-size:.75rem;padding:11px 24px;border:1px solid #d4a01766;background:transparent;color:var(--gold);cursor:pointer;letter-spacing:.06em;transition:all .25s;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);}
+.btn-action:hover{background:rgba(212,160,23,.15);border-color:var(--gold);}
+.btn-action.primary{background:linear-gradient(135deg,#4a2800,#d4a017,#4a2800);color:#080604;border-color:var(--gold2);}
+.btn-action.danger{background:linear-gradient(135deg,#5a0000,#9b1c1c,#5a0000);color:#fff;border-color:var(--red);}
+#screen-battle{padding:80px 20px 50px;background:radial-gradient(ellipse at 50% 80%,#1c0500 0%,#080604 55%);align-items:stretch;}
+.battle-wrap{max-width:780px;margin:0 auto;width:100%;}
+.battle-title-h{font-family:'Cinzel Decorative',serif;font-size:1.4rem;color:var(--gold2);text-align:center;margin-bottom:4px;}
+.battle-subtitle{color:var(--dim);font-size:.85rem;text-align:center;font-style:italic;margin-bottom:20px;}
+.arena{display:grid;grid-template-columns:1fr 60px 1fr;gap:12px;align-items:center;margin-bottom:18px;}
+.fighter-card{background:rgba(212,160,23,.05);border:1px solid #d4a01744;padding:16px;border-radius:3px;text-align:center;transition:box-shadow .3s;}
+.fighter-card.hit{box-shadow:0 0 30px #9b1c1caa;animation:shake .3s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.f-name{font-family:'Cinzel Decorative',serif;font-size:.82rem;color:var(--gold2);margin-bottom:8px;}
+.f-emoji{font-size:3.2rem;margin:6px 0;}
+.f-hp-track{background:#1a1000;border:1px solid #d4a01733;border-radius:10px;height:12px;overflow:hidden;margin-top:8px;}
+.f-hp-fill{height:100%;border-radius:10px;transition:width .5s ease;}
+.f-hp-fill.hi{background:linear-gradient(90deg,#1a6a1a,#4acc5a);}
+.f-hp-fill.md{background:linear-gradient(90deg,#8a7000,#ccaa00);}
+.f-hp-fill.lo{background:linear-gradient(90deg,#7a0a0a,#cc2222);}
+.f-hp-label{font-size:.72rem;color:var(--dim);margin-top:4px;}
+.f-buffs{display:flex;gap:4px;justify-content:center;margin-top:6px;min-height:20px;}
+.buff-tag{font-size:.65rem;padding:2px 7px;border-radius:10px;background:rgba(212,160,23,.15);color:var(--gold);}
+.vs-mid{font-family:'Cinzel Decorative',serif;font-size:2rem;color:var(--red);text-align:center;text-shadow:0 0 25px #9b1c1c;animation:vspulse 1.2s infinite alternate;}
+@keyframes vspulse{from{opacity:.6;transform:scale(.92)}to{opacity:1;transform:scale(1.08)}}
+.battle-log-wrap{background:rgba(0,0,0,.5);border:1px solid #d4a01722;border-radius:2px;padding:12px 16px;height:110px;overflow-y:auto;margin-bottom:16px;}
+.log-entry{font-size:.85rem;margin-bottom:5px;line-height:1.4;padding-left:12px;position:relative;}
+.log-entry::before{content:'·';position:absolute;left:0;color:var(--dim);}
+.log-entry.atk{color:#e0a040;}
+.log-entry.enemy-atk{color:#e06060;}
+.log-entry.heal{color:#4acc5a;}
+.log-entry.crit{color:#ff8040;font-weight:700;}
+.log-entry.info{color:var(--dim);}
+.log-entry.win{color:var(--gold2);font-weight:700;}
+.battle-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+.b-btn{font-family:'Cinzel Decorative',serif;font-size:.72rem;padding:13px 18px;border:1px solid #d4a01766;background:rgba(212,160,23,.07);color:var(--gold);cursor:pointer;letter-spacing:.04em;transition:all .25s;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);position:relative;}
+.b-btn:hover:not(:disabled){background:rgba(212,160,23,.18);border-color:var(--gold);transform:scale(1.04);}
+.b-btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important;}
+.b-btn .cd{position:absolute;bottom:3px;right:6px;font-size:.55rem;color:var(--dim);font-family:monospace;}
+.battle-tip{text-align:center;font-size:.82rem;color:var(--dim);font-style:italic;margin-bottom:10px;}
+#screen-end{align-items:center;justify-content:center;text-align:center;padding:60px 20px;background:radial-gradient(ellipse at 50% 30%,#1c0e00 0%,#080604 60%);}
+.end-icon{font-size:5.5rem;margin-bottom:1rem;animation:bounce 2s infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.end-title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.6rem,5vw,3rem);color:var(--gold2);margin-bottom:.5rem;text-shadow:0 0 50px #d4a017aa;}
+.end-sub{color:var(--dim);font-size:1.05rem;font-style:italic;margin-bottom:2.5rem;}
+.end-stats-row{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem;}
+.end-stat-box{background:rgba(212,160,23,.07);border:1px solid #d4a01744;padding:18px 28px;border-radius:3px;min-width:110px;text-align:center;}
+.end-stat-val{font-family:'Cinzel Decorative',serif;font-size:2rem;color:var(--gold);}
+.end-stat-lbl{font-size:.75rem;color:var(--dim);margin-top:4px;}
+.end-quote{max-width:560px;font-style:italic;font-size:1rem;color:#b49860;line-height:1.85;margin-bottom:2.5rem;}
+.notif{position:fixed;top:68px;right:16px;z-index:500;background:rgba(8,6,4,.96);border:1px solid var(--gold);padding:12px 20px;font-size:.88rem;color:var(--text);border-radius:2px;max-width:280px;animation:notifIn .3s,notifOut .4s 2.6s both;pointer-events:none;}
+@keyframes notifIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes notifOut{from{opacity:1}to{opacity:0}}
+.divider{height:1px;background:linear-gradient(90deg,transparent,#d4a01733,transparent);margin:10px 0;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:#080604;}
+::-webkit-scrollbar-thumb{background:#d4a01755;border-radius:5px;}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="hud">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div class="hud-stat">⚔️ Ерлік: <span class="val" id="hud-honor">100</span></div>
+    <div class="hud-stat">❤️<div class="hud-bar-wrap"><div class="hud-bar" id="hud-hp-bar" style="width:100%;background:linear-gradient(90deg,#1a6a1a,#4acc5a);"></div></div><span class="val" id="hud-hp">100</span></div>
+    <div class="hud-stat">🏹 Жауынгер: <span class="val" id="hud-warriors">300</span></div>
+    <div class="hud-stat">💰 <span class="val" id="hud-gold">60</span></div>
+  </div>
+  <div class="hud-center" id="hud-ch-title">Аңырақай — Дала Ерлігі</div>
+  <div class="hud-score">⭐ <span id="hud-score">0</span></div>
+</div>
+<div id="screen-title" class="screen active">
+  <div class="title-kz-pre">Қазақ тарихы · RPG ойын</div>
+  <div class="title-ornament">❖ ✦ ❖</div>
+  <h1 class="title-main">АҢЫРАҚАЙ</h1>
+  <h2 class="title-sub">Дала Ерлігі</h2>
+  <div class="title-year">1730 жыл</div>
+  <p class="title-lore">Қазақ даласы жоңғар шапқыншылығынан шарылып тұр. Үш жүз бірікті — Әбілқайыр хан бастаған Кіші жүз, Сәмеке хан бастаған Орта жүз, Жолбарыс хан бастаған Ұлы жүз.<br><br>Аңырақай көлі жанында тарихи шайқас болмақ. Жас сұлтан <em>Абылай</em> алғаш рет жауға шықты. Сен — оның жанындағы батыр. Тарихты өз қолыңмен жаза.<br><br><strong style="color:var(--gold)">«Жауға тізе бүкпен, ер туған — қазақ!»</strong></p>
+  <button class="btn-play" onclick="startGame()">⚔ ОЙЫНДЫ БАСТАУ ⚔</button>
+</div>
+<div id="screen-chapters" class="screen">
+  <h2 class="ch-page-title">Тарих Жолы</h2>
+  <p class="ch-page-sub">Тараудыкт таңда және ерлікпен жүр</p>
+  <div class="chapters-grid" id="chapters-grid"></div>
+  <div class="progress-bar-wrap">
+    <span class="prog-label">Үлгерім:</span>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <span class="prog-pct" id="prog-pct">0 / 5</span>
+  </div>
+</div>
+<div id="screen-story" class="screen">
+  <div class="story-wrap">
+    <div class="story-head">
+      <div class="story-ch-num" id="s-ch-num">ТАРАУ I</div>
+      <h2 class="story-ch-name" id="s-ch-name">—</h2>
+      <div class="story-location" id="s-location">📍 —</div>
+    </div>
+    <div class="scene-card">
+      <div class="speaker-tag" id="s-speaker" style="display:none"></div>
+      <div class="scene-text" id="s-text">…</div>
+    </div>
+    <div class="choices-col" id="choices-col"></div>
+    <div class="outcome-panel" id="outcome-panel"></div>
+    <div class="divider"></div>
+    <div class="story-actions">
+      <button class="btn-action" onclick="goChapters()">◀ Тараулар</button>
+      <button class="btn-action primary" id="btn-next" onclick="nextSceneOrBattle()" style="display:none">Алға ▶</button>
+      <button class="btn-action danger" id="btn-battle" onclick="enterBattle()" style="display:none">⚔ ШАЙҚАС</button>
+      <button class="btn-action primary" id="btn-finish-ch" onclick="finishChapter()" style="display:none">✓ Тарауды аяқта</button>
+    </div>
+  </div>
+</div>
+<div id="screen-battle" class="screen">
+  <div class="battle-wrap">
+    <div class="battle-title-h" id="b-title">⚔ Шайқас ⚔</div>
+    <div class="battle-subtitle" id="b-sub">Жауға қарсы тұр!</div>
+    <div class="arena">
+      <div class="fighter-card" id="fc-player">
+        <div class="f-name" id="f-player-name">Батыр</div>
+        <div class="f-emoji">🏹</div>
+        <div class="f-hp-track"><div class="f-hp-fill hi" id="f-player-bar" style="width:100%"></div></div>
+        <div class="f-hp-label"><span id="f-player-hp">100</span>/<span id="f-player-maxhp">100</span> HP</div>
+        <div class="f-buffs" id="f-player-buffs"></div>
+      </div>
+      <div class="vs-mid">VS</div>
+      <div class="fighter-card" id="fc-enemy">
+        <div class="f-name" id="f-enemy-name">Жау</div>
+        <div class="f-emoji" id="f-enemy-emoji">⚔️</div>
+        <div class="f-hp-track"><div class="f-hp-fill hi" id="f-enemy-bar" style="width:100%"></div></div>
+        <div class="f-hp-label"><span id="f-enemy-hp">80</span>/<span id="f-enemy-maxhp">80</span> HP</div>
+        <div class="f-buffs" id="f-enemy-buffs"></div>
+      </div>
+    </div>
+    <div class="battle-tip" id="b-tip">Шабуыл жаса немесе стратегиялы жүр!</div>
+    <div class="battle-log-wrap"><div class="battle-log" id="battle-log"><div class="log-entry info">Шайқас басталды…</div></div></div>
+    <div class="battle-btns">
+      <button class="b-btn" id="bb-attack" onclick="bAction('attack')">⚔ Шабуыл<span class="cd" id="cd-attack"></span></button>
+      <button class="b-btn" id="bb-heavy" onclick="bAction('heavy')">💥 Күшті соққы<span class="cd" id="cd-heavy"></span></button>
+      <button class="b-btn" id="bb-dodge" onclick="bAction('dodge')">🌀 Жалтару<span class="cd" id="cd-dodge"></span></button>
+      <button class="b-btn" id="bb-rally" onclick="bAction('rally')">📯 Жауынгерлерді шақыру<span class="cd" id="cd-rally"></span></button>
+      <button class="b-btn" id="bb-heal" onclick="bAction('heal')">🌿 Емдеу (1×)<span class="cd" id="cd-heal"></span></button>
+    </div>
+    <div style="text-align:center;"><button class="btn-action primary" id="btn-after-battle" onclick="afterBattle()" style="display:none">Жалғастыру ▶</button></div>
+  </div>
+</div>
+<div id="screen-end" class="screen">
+  <div class="end-icon">👑</div>
+  <h1 class="end-title">Аңырақайда жеңдік!</h1>
+  <p class="end-sub">Сенің батырың тарихқа мәңгі жазылды</p>
+  <div class="end-stats-row">
+    <div class="end-stat-box"><div class="end-stat-val" id="e-score">0</div><div class="end-stat-lbl">Ұпай</div></div>
+    <div class="end-stat-box"><div class="end-stat-val" id="e-honor">0</div><div class="end-stat-lbl">Ерлік</div></div>
+    <div class="end-stat-box"><div class="end-stat-val" id="e-warriors">0</div><div class="end-stat-lbl">Жауынгер</div></div>
+    <div class="end-stat-box"><div class="end-stat-val" id="e-chapters">5</div><div class="end-stat-lbl">Тарау</div></div>
+  </div>
+  <p class="end-quote">«1730 жылы Аңырақай шайқасында қазақ халқы жоңғарларды жеңілте отырып, ұлы жеңіске жетті. Осы шайқаста жас Абылай алғаш рет Шарыш деген жоңғар батырын жеңіп, халық арасында Абылай атанды.»</p>
+  <button class="btn-play" onclick="restartGame()">↺ Қайта ойна</button>
+</div>
+<script>
+(function(){
+  const canvas=document.getElementById('bg-canvas');
+  const ctx=canvas.getContext('2d');
+  let stars=[];
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;makeStars();}
+  function makeStars(){stars=[];for(let i=0;i<120;i++){stars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.5+.3,a:Math.random(),da:(Math.random()*.005+.002)*(Math.random()<.5?1:-1)});}}
+  function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);stars.forEach(s=>{s.a=Math.max(.1,Math.min(.9,s.a+s.da));if(s.a<=.1||s.a>=.9)s.da*=-1;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,240,200,${s.a})`;ctx.fill();});requestAnimationFrame(draw);}
+  window.addEventListener('resize',resize);resize();draw();
+})();
+const CHAPTERS_DATA=[{id:0,title:"Жасақ жинау",location:"Түркістан, 1730 жыл",intro:`Көктем. Түркістан маңы. Жоңғар қалмақтарының шапқыншылығы бүкіл қазақ даласын қан майданға айналдырды. «Ақтабан шұбырынды, Алқакөл сұлама» — халық осы апатты осылай атайды.\n\nХандар шұғыл кеңесті: Үш жүздің батырлары жиналды. Жас сұлтан Абылай да осында.\n\nСен — Орта жүздің жас батыры Жанарыс. Ханның жарлығы:`,scenes:[{speaker:"Сәмеке хан",text:`«Батырлар! Аңырақай маңында жоңғардың 70,000 қолы тұр. Біздің де 40,000 жауынгеріміз бар.\n\nБатыр Жанарыс, алдын ала барлау жасап, жоңғардың орналасуын анықта.\n\nҚалай барласаң?»`,choices:[{text:"Жалғыз барлаймын — жылдам, байқалмай, жауды алдаймын.",right:true,gain:{honor:15,score:25},lose:{},outcome:"✦ Керемет! Сен жалғыз барлап, жоңғардың орналасуын толық анықтадың. Ерлігің үшін барлық батырлар сені мақтады."},{text:"10 атты жауынгермен барлаймын — қауіпсіз, нәтижелі.",right:true,gain:{honor:10,score:18,warriors:5},lose:{},outcome:"✦ Ойластырылған шешім. Отряд тиімді барлап оралды. Ешкім жарақатланбады."},{text:"Барлауды кешіктіреміз — алдымен жауынгерлерге ас беру керек.",right:false,gain:{score:5},lose:{honor:10,warriors:10},outcome:"✗ Кешіккен барлау жоңғарларға жасырынуға мүмкіндік берді. Кейін шайқаста 10 жауынгер қаза тапты."}]}],hasBattle:false},{id:1,title:"Абылайдың батылдығы",location:"Аңырақай жазығы",intro:`Барлау аяқталды. Екі жақ бетпе-бет тұр. Жоңғар жағынан ерекше бір батыр шықты — Шарыш.\n\nЖоңғар ордасынан дауыс: «Қазақтарда батыр жоқ па?! Шарышпен жекпе-жекке шыға алатын ер бар ма?!»\n\nАбылай сұлтан ілгері шықты — бірақ ол жас, тәжірибесіз.`,scenes:[{speaker:"Батыр Жанарыс",text:`Жас Абылай: «Мен шығамын! Осы жоңғарды жеңемін немесе өлемін!»\n\nХан саған қарады: «Батыр Жанарыс, не айтасың?»`,choices:[{text:"«Абылайды жіберіңіз! Жастықта да ер жүрек батырлар болған!»",right:true,gain:{honor:25,score:35,warriors:20},lose:{},outcome:"✦ ҰЛЫ ШЕШІМ! Абылай Шарышты жеңді! «Абылай!» деген ұран бүкіл далаға жайылды!"},{text:"«Абылай жас — мен өзім шығайын Шарышқа!»",right:true,gain:{honor:20,score:28},lose:{hp:15},outcome:"✦ Ер жүрек батыр! Сен Шарышпен ұзақ күрестің, жарақат алдың, бірақ жеңдің!"},{text:"«Жекпе-жекке шықпайық — тактикалық артықшылықты пайдаланайық.»",right:false,gain:{score:8},lose:{honor:20,warriors:15},outcome:"✗ Жоңғарлар қазақтарды қорқақ деп атады. Жасақтың рухы сынды."}]}],hasBattle:true,battle:{name:"Шарыш — Жоңғар батыры",enemy:"Шарыш",emoji:"🗡️",hp:95,atk:18,defense:5,intro:"Жоңғардың ең қауіпті батыры алдыңда! Оны жеңсең — жасақтың рухы аспандайды!"}},{id:2,title:"Аңырақай шайқасы",location:"Аңырақай көлі жанында",intro:`Жекпе-жек жеңілді! Енді ең шешуші сәт: бас шайқас.\n\nҮш жүздің 40,000 жауынгері дайын. Хандар соңғы кеңес өткізуде.`,scenes:[{speaker:"Әбілқайыр хан",text:`«Батырлар! Таңда шайқас болады. Үш тактика бар:\n\n1. Тікелей шабуыл\n2. Қоршау тактикасы\n3. Алдаусырата шегіну\n\nБатыр Жанарыс, ұсынысың?»`,choices:[{text:"«Қоршау тактикасы дұрыс — шығын аз, жеңіс кепілді!»",right:true,gain:{honor:30,score:40,warriors:50},lose:{},outcome:"✦ СТРАТЕГИЯЛЫҚ ЖЕҢІС! Жоңғарлар үш тараптан қамалып, ретсіз шегінді!"},{text:"«Алдаусырата шегіну — бабаларымыздың тактикасы!»",right:true,gain:{honor:20,score:30,warriors:25},lose:{hp:10},outcome:"✦ Дала тактикасы жемісті! Жоңғарлар қапыда ұрылды. Жеңіс!"},{text:"«Тікелей шабуыл! Батырлар ешнәрседен қорықпайды!»",right:false,gain:{honor:10,score:15},lose:{warriors:60,hp:20},outcome:"✗ Ер жүрек, бірақ қымбат. 60 жауынгер қаза тапты."}]}],hasBattle:true,battle:{name:"Жоңғар қолбасшысы",enemy:"Зеренжаб",emoji:"⚔️",hp:110,atk:20,defense:8,intro:"Жоңғардың бас қолбасшысы Зеренжаб! Оны жеңсең — шайқас аяқталады!"}},{id:3,title:"Еліктің оралуы",location:"Аңырақай маңы, жеңіс кеші",intro:`Жоңғарлар жеңілді! Қазақтар жеңіске жетті!\n\nБірақ жеңістен кейін де маңызды шешімдер бар. 300 тұтқын жоңғар бар.`,scenes:[{speaker:"Үш хан Кеңесі",text:`«Тұтқынға түскен 300 жоңғар жауынгері бар. Не істейміз?\n\nБір хан: «Өлтірейік»\nЕкінші хан: «Босатайық»\nҮшінші хан: «Айырбасқа бер»\n\nБатыр Жанарыс?»`,choices:[{text:"«Тұтқын қазақтарға айырбас жасайық — халқымыз оралсын!»",right:true,gain:{honor:35,score:45,warriors:30},lose:{},outcome:"✦ ДАНАЛЫҚ ШЕШІМ! 300 қазақ жауынгері оралды. Ерлігің + даналығың = ұлы батыр!"},{text:"«Босатайық — біз мейірімді халықпыз.»",right:true,gain:{honor:20,score:25},lose:{},outcome:"✦ Асыл жүрек! Тарихта бұл мейірімділіктің белгісі болды."},{text:"«Өлтірейік — болашақ ұрпақты қорғайық!»",right:false,gain:{score:5},lose:{honor:30},outcome:"✗ Хандар қарсы болды. Жаңа соғысқа апарады деп есептелді."}]}],hasBattle:false},{id:4,title:"Абылайдың Тажы",location:"Аңырақай, мерекелік ас",intro:`Жеңіс мерекесі! От жанып, домбыра шалынып, жыршылар ерліктерді жырлауда.\n\nМереке соңында хан саған ерекше мәртебе ұсынады.`,scenes:[{speaker:"Сәмеке хан мен Абылай",text:`«Батыр Жанарыс! Сен осы жорықта ерлік, ақыл және адалдықты бірдей көрсеттің.\n\nСаған таңдау:\n— Ханның бас батыры\n— Би — халыққа адал сот\n— Дала ақыны\n\nҚайсысын таңдайсың?»`,choices:[{text:"«Бас батыр болам — халқымды мәңгі қорғаймын!»",right:true,gain:{honor:40,score:50,warriors:50},lose:{},outcome:"✦ ҰЛЫ ТАҢДАУ! Бас батыр Жанарыс — тарихта қалды!"},{text:"«Би болам — халқыма адалдықпен қызмет етем!»",right:true,gain:{honor:35,score:45,gold:50},lose:{},outcome:"✦ ДАНАЛЫҚ ТАҢДАУ! Абылай: «Ер батыр тек найзамен емес, ақылымен де ер!»"},{text:"«Жырши болам — ерліктер ұмытылмасын!»",right:true,gain:{honor:30,score:40},lose:{},outcome:"✦ МӘДЕНИ ТАҢДАУ! Жырши Жанарыс — Аңырақай жырлары мыңдаған жыл айтылды!"}]}],hasBattle:false,isFinal:true}];
+let G={honor:100,hp:100,maxHp:100,gold:60,warriors:300,score:0,chapsDone:[],curChap:null,choiceDone:false,bHp:100,bMaxHp:100,bEnemyHp:0,bEnemyMaxHp:0,bDodging:false,bHealUsed:false,cooldowns:{attack:0,heavy:0,dodge:0,rally:0,heal:0},pendingBattle:null,battleWon:false};
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');window.scrollTo(0,0);}
+function hudUpdate(){document.getElementById('hud-honor').textContent=G.honor;document.getElementById('hud-hp').textContent=G.hp;document.getElementById('hud-warriors').textContent=G.warriors;document.getElementById('hud-gold').textContent=G.gold;document.getElementById('hud-score').textContent=G.score;const pct=G.hp/G.maxHp*100;const bar=document.getElementById('hud-hp-bar');bar.style.width=pct+'%';bar.style.background=pct>60?'linear-gradient(90deg,#1a6a1a,#4acc5a)':pct>30?'linear-gradient(90deg,#8a7000,#ccaa00)':'linear-gradient(90deg,#7a0a0a,#cc2222)';}
+function startGame(){document.getElementById('hud').classList.add('show');hudUpdate();renderChapters();show('chapters');}
+function restartGame(){G={honor:100,hp:100,maxHp:100,gold:60,warriors:300,score:0,chapsDone:[],curChap:null,choiceDone:false,bHp:100,bMaxHp:100,bEnemyHp:0,bEnemyMaxHp:0,bDodging:false,bHealUsed:false,cooldowns:{attack:0,heavy:0,dodge:0,rally:0,heal:0},pendingBattle:null,battleWon:false};hudUpdate();renderChapters();show('chapters');}
+function goChapters(){renderChapters();show('chapters');}
+function renderChapters(){const grid=document.getElementById('chapters-grid');grid.innerHTML='';CHAPTERS_DATA.forEach((ch,i)=>{const done=G.chapsDone.includes(i);const locked=!done&&i>0&&!G.chapsDone.includes(i-1);const d=document.createElement('div');d.className='ch-card'+(locked?' locked':'')+(done?' done':'');d.innerHTML=`<div class="ch-num">ТАРАУ ${i+1}</div><div class="ch-name">${ch.title}</div><div class="ch-loc">📍 ${ch.location}</div><div class="ch-badge">${done?'✅':locked?'🔒':'▶️'}</div>`;if(!locked)d.onclick=()=>loadChapter(i);grid.appendChild(d);});const pct=Math.round(G.chapsDone.length/CHAPTERS_DATA.length*100);document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('prog-pct').textContent=`${G.chapsDone.length} / ${CHAPTERS_DATA.length}`;}
+let storyPhase=0;
+function loadChapter(i){const ch=CHAPTERS_DATA[i];G.curChap=i;G.choiceDone=false;storyPhase=0;document.getElementById('hud-ch-title').textContent=ch.title;document.getElementById('s-ch-num').textContent='ТАРАУ '+(i+1);document.getElementById('s-ch-name').textContent=ch.title;document.getElementById('s-location').textContent='📍 '+ch.location;document.getElementById('s-speaker').style.display='none';document.getElementById('s-text').textContent=ch.intro;document.getElementById('choices-col').innerHTML='';document.getElementById('outcome-panel').className='outcome-panel';document.getElementById('btn-next').style.display='inline-block';document.getElementById('btn-battle').style.display='none';document.getElementById('btn-finish-ch').style.display='none';show('story');}
+function nextSceneOrBattle(){const ch=CHAPTERS_DATA[G.curChap];if(storyPhase===0){storyPhase=1;const sc=ch.scenes[0];const spk=document.getElementById('s-speaker');if(sc.speaker){spk.style.display='block';spk.textContent='— '+sc.speaker+':';}else spk.style.display='none';document.getElementById('s-text').textContent=sc.text;document.getElementById('btn-next').style.display='none';renderChoices(sc);}}
+function renderChoices(sc){const col=document.getElementById('choices-col');col.innerHTML='';sc.choices.forEach((c,i)=>{const b=document.createElement('button');b.className='choice-btn';b.textContent=c.text;b.onclick=()=>makeChoice(sc,i,b);col.appendChild(b);});}
+function makeChoice(sc,idx,btn){if(G.choiceDone)return;G.choiceDone=true;const c=sc.choices[idx];applyDelta(c.gain,c.lose);document.querySelectorAll('.choice-btn').forEach(b=>{b.disabled=true;b.classList.remove('chosen','wrong');});btn.classList.add(c.right?'chosen':'wrong');const op=document.getElementById('outcome-panel');let html=c.outcome+'<br><br>';if(Object.keys(c.gain).length)html+='<span class="gain-tag">+'+fmtDelta(c.gain)+'</span> ';if(Object.keys(c.lose).length)html+='<span class="loss-tag">-'+fmtDelta(c.lose)+'</span>';op.innerHTML=html;op.classList.add('show');hudUpdate();storyPhase=2;const ch=CHAPTERS_DATA[G.curChap];if(ch.hasBattle){document.getElementById('btn-battle').style.display='inline-block';}else if(ch.isFinal){document.getElementById('btn-finish-ch').style.display='inline-block';document.getElementById('btn-finish-ch').textContent='👑 Ойынды аяқта';document.getElementById('btn-finish-ch').onclick=endGame;}else{document.getElementById('btn-finish-ch').style.display='inline-block';}}
+function applyDelta(gain,lose){if(gain.honor)G.honor=Math.min(200,G.honor+(gain.honor||0));if(gain.hp)G.hp=Math.min(G.maxHp,G.hp+(gain.hp||0));if(gain.warriors)G.warriors+=gain.warriors||0;if(gain.gold)G.gold+=gain.gold||0;if(gain.score)G.score+=gain.score||0;if(lose.honor)G.honor=Math.max(0,G.honor-(lose.honor||0));if(lose.hp)G.hp=Math.max(1,G.hp-(lose.hp||0));if(lose.warriors)G.warriors=Math.max(0,G.warriors-(lose.warriors||0));if(lose.gold)G.gold=Math.max(0,G.gold-(lose.gold||0));}
+function fmtDelta(obj){const map={honor:'Ерлік',hp:'HP',warriors:'Жауынгер',gold:'Алтын',score:'Ұпай'};return Object.entries(obj).filter(([,v])=>v).map(([k,v])=>`${map[k]||k} ${v}`).join(', ');}
+function finishChapter(){if(!G.chapsDone.includes(G.curChap))G.chapsDone.push(G.curChap);G.score+=50;notify('✅ Тарау аяқталды! +50 ұпай');hudUpdate();storyPhase=0;setTimeout(()=>{renderChapters();show('chapters');},500);}
+function enterBattle(){const ch=CHAPTERS_DATA[G.curChap];const bd=ch.battle;G.bHp=G.hp;G.bMaxHp=G.maxHp;G.bEnemyHp=bd.hp;G.bEnemyMaxHp=bd.hp;G.bDodging=false;G.bHealUsed=false;G.battleWon=false;G.cooldowns={attack:0,heavy:0,dodge:0,rally:0,heal:0};G.pendingBattle=bd;document.getElementById('b-title').textContent='⚔ '+bd.name;document.getElementById('b-sub').textContent=bd.intro;document.getElementById('f-player-name').textContent='Батыр Жанарыс';document.getElementById('f-enemy-name').textContent=bd.enemy;document.getElementById('f-enemy-emoji').textContent=bd.emoji;updateBars();document.getElementById('f-player-buffs').innerHTML='';document.getElementById('f-enemy-buffs').innerHTML='';document.getElementById('btn-after-battle').style.display='none';['attack','heavy','dodge','rally','heal'].forEach(k=>{document.getElementById('bb-'+k).disabled=false;document.getElementById('cd-'+k).textContent='';});clearLog();addLog('Шайқас басталды!','info');addLog(bd.intro,'info');show('battle');}
+function updateBars(){const pp=G.bHp/G.bMaxHp*100;const pb=document.getElementById('f-player-bar');pb.style.width=pp+'%';pb.className='f-hp-fill '+(pp>60?'hi':pp>30?'md':'lo');document.getElementById('f-player-hp').textContent=G.bHp;document.getElementById('f-player-maxhp').textContent=G.bMaxHp;const ep=G.bEnemyHp/G.bEnemyMaxHp*100;const eb=document.getElementById('f-enemy-bar');eb.style.width=ep+'%';eb.className='f-hp-fill '+(ep>60?'hi':ep>30?'md':'lo');document.getElementById('f-enemy-hp').textContent=Math.max(0,G.bEnemyHp);document.getElementById('f-enemy-maxhp').textContent=G.bEnemyMaxHp;}
+function clearLog(){document.getElementById('battle-log').innerHTML='';}
+function addLog(msg,cls='info'){const d=document.createElement('div');d.className='log-entry '+cls;d.textContent=msg;const log=document.getElementById('battle-log');log.appendChild(d);log.scrollTop=log.scrollHeight;}
+function setCd(key,turns){G.cooldowns[key]=turns;if(turns>0){document.getElementById('bb-'+key).disabled=true;document.getElementById('cd-'+key).textContent=turns+'т';}}
+function tickCooldowns(){['attack','heavy','dodge','rally','heal'].forEach(k=>{if(G.cooldowns[k]>0){G.cooldowns[k]--;if(G.cooldowns[k]===0){if(!(k==='heal'&&G.bHealUsed)){document.getElementById('bb-'+k).disabled=false;}document.getElementById('cd-'+k).textContent='';}else{document.getElementById('cd-'+k).textContent=G.cooldowns[k]+'т';}}});}
+function bAction(type){if(G.battleWon||G.bEnemyHp<=0||G.bHp<=0)return;const bd=G.pendingBattle;let playerDmg=0,isCrit=false;if(type==='attack'){playerDmg=10+Math.floor(Math.random()*8);isCrit=Math.random()<.2;if(isCrit){playerDmg=Math.floor(playerDmg*2.2);addLog('💥 СОКЫРЛЫ СОҚҚЫ! +'+playerDmg,'crit');}else addLog('⚔ Шабуыл: '+playerDmg+' зиян.','atk');setCd('attack',1);}else if(type==='heavy'){playerDmg=22+Math.floor(Math.random()*10);isCrit=Math.random()<.15;if(isCrit){playerDmg=Math.floor(playerDmg*1.8);addLog('💥💥 ӨЛТІРУШІ СОҚҚЫ! '+playerDmg,'crit');}else addLog('💥 Күшті соққы: '+playerDmg+' зиян!','atk');setCd('heavy',3);}else if(type==='dodge'){G.bDodging=true;addLog('🌀 Жалтару! Келесі соққы сәтсіз.','atk');document.getElementById('f-player-buffs').innerHTML='<span class="buff-tag">🌀 Қорған</span>';setCd('dodge',3);}else if(type==='rally'){const bonus=20+Math.floor(Math.random()*15);playerDmg=bonus;addLog('📯 Жауынгерлер шақырды! '+bonus+' зиян!','atk');G.warriors=Math.min(G.warriors+10,999);hudUpdate();setCd('rally',4);}else if(type==='heal'){if(G.bHealUsed){addLog('🌿 Бір рет қолданылады!','info');return;}const h=30+Math.floor(Math.random()*20);G.bHp=Math.min(G.bMaxHp,G.bHp+h);G.bHealUsed=true;addLog('🌿 Емделдің! +'+h+' HP','heal');document.getElementById('bb-heal').disabled=true;document.getElementById('cd-heal').textContent='✓';updateBars();tickCooldowns();return;}
+G.bEnemyHp-=Math.max(0,playerDmg-(bd.defense||0));updateBars();if(G.bEnemyHp<=0){G.bEnemyHp=0;updateBars();G.battleWon=true;addLog('🏆 ЖЕҢДІҢ! '+bd.enemy+' жеңілді!','win');document.getElementById('f-enemy-emoji').style.opacity='.3';disableBattleBtns();document.getElementById('btn-after-battle').style.display='inline-block';hitAnim('fc-enemy');return;}hitAnim('fc-enemy');
+setTimeout(()=>{if(G.bEnemyHp<=0||G.battleWon)return;let enemyDmg=Math.floor((bd.atk||15)*.8+Math.random()*(bd.atk||15)*.5);const eCrit=Math.random()<.12;if(eCrit)enemyDmg=Math.floor(enemyDmg*1.8);if(G.bDodging){addLog('🌀 Жалтардың! Сәтсіз!','heal');G.bDodging=false;document.getElementById('f-player-buffs').innerHTML='';}else{G.bHp=Math.max(0,G.bHp-enemyDmg);if(eCrit)addLog('🔥 '+bd.enemy+' СОКЫРЛЫ! -'+enemyDmg,'crit');else addLog('🗡 '+bd.enemy+': -'+enemyDmg,'enemy-atk');hitAnim('fc-player');updateBars();G.hp=G.bHp;hudUpdate();}tickCooldowns();if(G.bHp<=0){addLog('💀 Жеңілдің! Жасақ жалғастырады...','info');G.bHp=15;G.bEnemyHp=0;G.battleWon=true;updateBars();G.honor=Math.max(0,G.honor-20);disableBattleBtns();document.getElementById('btn-after-battle').style.display='inline-block';hudUpdate();}},700);}
+function hitAnim(id){const el=document.getElementById(id);el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit');setTimeout(()=>el.classList.remove('hit'),400);}
+function disableBattleBtns(){['attack','heavy','dodge','rally','heal'].forEach(k=>document.getElementById('bb-'+k).disabled=true);}
+function afterBattle(){G.hp=G.bHp;G.score+=60;if(G.battleWon){G.honor=Math.min(200,G.honor+20);G.warriors+=30;notify('⚔ Жеңіс! +20 Ерлік, +30 Жауынгер');}hudUpdate();storyPhase=2;document.getElementById('btn-battle').style.display='none';const ch=CHAPTERS_DATA[G.curChap];if(ch.isFinal){endGame();return;}show('story');document.getElementById('btn-finish-ch').style.display='inline-block';}
+function endGame(){if(!G.chapsDone.includes(G.curChap))G.chapsDone.push(G.curChap);G.score+=100;document.getElementById('e-score').textContent=G.score;document.getElementById('e-honor').textContent=G.honor;document.getElementById('e-warriors').textContent=G.warriors;document.getElementById('e-chapters').textContent=G.chapsDone.length;show('end');}
+function notify(msg){const d=document.createElement('div');d.className='notif';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),3100);}
+storyPhase=0;
+</script>
+</body>
+</html>
